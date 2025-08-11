@@ -1,0 +1,106 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${PORT:-3000}:3000"
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=development
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-tx-crawler}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_NAME:-tx-crawler}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    # Platform will be auto-detected based on host architecture
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    # Platform will be auto-detected based on host architecture
+    ports:
+      - "${REDIS_COMMANDER_PORT:-8081}:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # Sepolia Testnet Crawler
+  crawler-sepolia:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    env_file:
+      - .env
+    environment:
+      - CRAWLER_NETWORK=sepolia
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
+    command: npm run start:evm-crawler
+
+  # add more crawlers here
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  app-network:
+    driver: bridge 

@@ -1,0 +1,200 @@
+# Repository Organization
+
+## Repository Module Structure
+Repositories are centralized in the global repositories module. Individual modules do not have their own `repositories` folder.
+
+```typescript
+// src/modules/repositories/repositories.module.ts
+import { Global, Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserEntity } from '@/modules/users/entities/user.entity';
+import { UserRepository } from './repositories/user.repository';
+
+const providers = [
+    UserRepository,
+    // All repositories as providers
+];
+
+@Global()
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([
+      UserEntity,
+      // All entities registered here
+    ]),
+  ],
+  providers,
+  exports: providers
+})
+export class RepositoriesModule {}
+```
+
+## Repository Pattern
+```typescript
+// src/modules/repositories/repositories/user.repository.ts
+import { Injectable } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+
+import { AbstractRepository } from '@/shared/base/abstract.repository';
+import { UserEntity } from '@/modules/users/entities/user.entity';
+
+@Injectable()
+export class UserRepository extends AbstractRepository<UserEntity> {
+  constructor(@InjectDataSource() dataSource: DataSource) {
+    super(UserEntity, dataSource);
+  }
+
+  async findByEmail(email: string): Promise<UserEntity | null> {
+    return this.findOne({ where: { email } });
+  }
+
+  async findByRole(role: string): Promise<UserEntity[]> {
+    return this.find({ where: { role } });
+  }
+
+  async findUsersWithPagination(page: number, limit: number): Promise<[UserEntity[], number]> {
+    const skip = (page - 1) * limit;
+    return this.findAndCount({
+      skip,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
+  }
+}
+```
+
+## Repository Usage
+Repositories are globally available, so no imports needed in individual modules:
+
+```typescript
+// In any service - no imports needed
+@Injectable()
+export class UserService {
+  constructor(
+    private readonly userRepository: UserRepository, // Available globally
+  ) {}
+
+  async createUser(createUserBodyDto: CreateUserBodyDto): Promise<UserEntity> {
+    const user = this.userRepository.create(createUserBodyDto);
+    return this.userRepository.save(user);
+  }
+
+  async findUserByEmail(email: string): Promise<UserEntity | null> {
+    return this.userRepository.findByEmail(email);
+  }
+}
+```
+
+## Entity Registration
+Entities are defined in their respective modules but registered in the repositories module:
+
+```typescript
+// src/modules/users/entities/user.entity.ts
+@Entity('users')
+export class UserEntity {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ type: 'varchar', length: 255, unique: true })
+  email: string;
+
+  @Column({ type: 'varchar', length: 255 })
+  name: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+}
+
+// src/modules/repositories/repositories.module.ts
+import { UserEntity } from '@/modules/users/entities/user.entity';
+
+@Global()
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([
+      UserEntity, // Register entity here
+    ]),
+  ],
+  // ... rest of module config
+})
+export class RepositoriesModule {}
+```
+
+## Abstract Repository
+All repositories extend the abstract repository for common operations:
+
+```typescript
+// src/shared/base/abstract.repository.ts
+import { Injectable } from '@nestjs/common';
+import { Repository, ObjectLiteral, EntityTarget, InjectDataSource } from 'typeorm';
+import { DataSource } from 'typeorm';
+
+export abstract class AbstractRepository<T extends ObjectLiteral> extends Repository<T> {
+  protected constructor(
+    entity: EntityTarget<T>,
+    @InjectDataSource() protected readonly dataSource: DataSource,
+  ) {
+    super(entity, dataSource.manager);
+  }
+
+  async findById(id: number): Promise<T | null> {
+    return this.findOne({ where: { id } as any });
+  }
+
+  async exists(id: number): Promise<boolean> {
+    const count = await this.count({ where: { id } as any });
+    return count > 0;
+  }
+}
+```
+
+## Custom Query Methods
+Add custom query methods to repositories for complex operations:
+
+```typescript
+@Injectable()
+export class UserRepository extends AbstractRepository<UserEntity> {
+  constructor(@InjectDataSource() dataSource: DataSource) {
+    super(UserEntity, dataSource);
+  }
+
+  async findUsersWithFilters(filters: {
+    name?: string;
+    role?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<[UserEntity[], number]> {
+    const { name, role, page = 1, limit = 20 } = filters;
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.createQueryBuilder('user');
+
+    if (name) {
+      queryBuilder.andWhere('user.name ILIKE :name', { name: `%${name}%` });
+    }
+
+    if (role) {
+      queryBuilder.andWhere('user.role = :role', { role });
+    }
+
+    return queryBuilder
+      .skip(skip)
+      .take(limit)
+      .orderBy('user.createdAt', 'DESC')
+      .getManyAndCount();
+  }
+}
+```
+
+## Repository Naming Convention
+- **Repository Class**: `{Entity}Repository`
+- **Repository File**: `{entity}.repository.ts`
+- **Repository Directory**: `src/modules/repositories/repositories/`
+
+## Examples
+- Entity: `User` → `UserRepository`, `user.repository.ts`
+- Entity: `Product` → `ProductRepository`, `product.repository.ts`

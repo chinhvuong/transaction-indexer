@@ -1,0 +1,104 @@
+# DTO Conventions
+
+## Single DTO File Per Request
+Each request should have only one DTO file that exports both request and response DTOs.
+
+```typescript
+// src/modules/users/dto/create-user.dto.ts
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsOptional, MinLength, MaxLength } from 'class-validator';
+
+// Request DTO
+export class CreateUserBodyDto {
+  @ApiProperty({ example: 'john@example.com' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(255)
+  email: string;
+
+  @ApiProperty({ example: 'John Doe' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(255)
+  name: string;
+}
+
+// Response DTO
+export class CreateUserResponseDto {
+  @ApiProperty({ example: 1 })
+  id: number;
+
+  @ApiProperty({ example: 'john@example.com' })
+  email: string;
+
+  @ApiProperty({ example: 'John Doe' })
+  name: string;
+
+  @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
+  createdAt: Date;
+}
+```
+
+## List Requests
+List requests must extend `PaginationDto` for query DTOs:
+
+```typescript
+// src/modules/users/dto/get-users.dto.ts
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString } from 'class-validator';
+import { PaginationDto } from '@/shared/dto/pagination.dto';
+
+export class GetUsersQueryDto extends PaginationDto {
+  @ApiPropertyOptional({ description: 'Search by name' })
+  @IsOptional()
+  @IsString()
+  name?: string;
+}
+
+export class GetUsersResponseDto {
+  @ApiProperty({ type: [UserResponseDto] })
+  data: UserResponseDto[];
+  
+  @ApiProperty()
+  total: number;
+}
+```
+
+## DTO Naming Convention
+- **Body DTOs**: End with `BodyDto` (e.g., `LoginBodyDto`, `RegisterBodyDto`)
+- **Query DTOs**: End with `QueryDto` (e.g., `GetUsersQueryDto`, `SearchQueryDto`)
+- **Param DTOs**: End with `ParamDto` (e.g., `UserIdParamDto`, `PostIdParamDto`)
+- **Success Response DTOs**: End with `ResponseDto` (e.g., `LoginResponseDto`, `RegisterResponseDto`)
+- **Error Response DTOs**: End with `ErrorResponseDto` (e.g., `LoginErrorResponseDto`)
+
+## File Naming
+- **Create**: `create-{entity}.dto.ts`
+- **Update**: `update-{entity}.dto.ts`
+- **Get List**: `get-{entity}s.dto.ts`
+- **Get Single**: `get-{entity}.dto.ts`
+- **Delete**: `delete-{entity}.dto.ts`
+
+## Validation Decorators
+Always use proper validation decorators with meaningful examples:
+
+```typescript
+export class CreateUserBodyDto {
+  @ApiProperty({ 
+    example: 'john@example.com',
+    description: 'User email address'
+  })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ 
+    example: 'John Doe',
+    description: 'User full name',
+    minLength: 2,
+    maxLength: 255
+  })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(255)
+  name: string;
+}
+```

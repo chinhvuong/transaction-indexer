@@ -1,0 +1,374 @@
+---
+globs: *.module.ts
+alwaysApply: false
+---
+# Module Structure
+
+## Standard Module Template
+```typescript
+// src/modules/{module-name}/{module-name}.module.ts
+import { Module } from '@nestjs/common';
+import { {Entity}Controller } from './controllers/{module-name}.controller';
+import { {Entity}Service } from './services/{module-name}.service';
+
+@Module({
+  controllers: [{Entity}Controller],
+  providers: [{Entity}Service],
+  exports: [{Entity}Service],
+})
+export class {Entity}Module {}
+```
+
+## Module Directory Structure
+```
+src/modules/{module-name}/
+├── {module-name}.module.ts
+├── controllers/
+│   └── {module-name}.controller.ts
+├── services/
+│   ├── {module-name}.service.ts
+│   ├── {module-name}-validation.service.ts
+│   └── {module-name}-creation.service.ts
+├── dto/
+│   ├── create-{entity}.dto.ts
+│   ├── update-{entity}.dto.ts
+│   ├── get-{entity}s.dto.ts
+│   ├── get-{entity}.dto.ts
+│   └── delete-{entity}.dto.ts
+├── entities/
+│   └── {entity}.entity.ts
+├── errors/
+│   └── {module-name}.errors.ts
+├── guards/
+├── decorators/
+├── strategies/
+├── types/
+│   └── index.ts
+└── utils/
+    ├── {module-name}-helpers.ts
+    └── {module-name}-validators.ts
+```
+
+## Module with Multiple Controllers
+```typescript
+// src/modules/{module-name}/{module-name}.module.ts
+import { Module } from '@nestjs/common';
+import { {Entity}Controller } from './controllers/{module-name}.controller';
+import { {Entity}ManagementController } from './controllers/{module-name}-management.controller';
+import { {Entity}Service } from './services/{module-name}.service';
+
+@Module({
+  controllers: [
+    {Entity}Controller,
+    {Entity}ManagementController,
+  ],
+  providers: [{Entity}Service],
+  exports: [{Entity}Service],
+})
+export class {Entity}Module {}
+```
+
+## Module with Dependencies
+```typescript
+// src/modules/{module-name}/{module-name}.module.ts
+import { Module } from '@nestjs/common';
+import { {Entity}Controller } from './controllers/{module-name}.controller';
+import { {Entity}Service } from './services/{module-name}.service';
+
+@Module({
+  imports: [],
+  controllers: [{Entity}Controller],
+  providers: [{Entity}Service],
+  exports: [{Entity}Service],
+})
+export class {Entity}Module {}
+```
+
+## Global Module (Repositories)
+```typescript
+// src/modules/repositories/repositories.module.ts
+import { Global, Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
+import { UserEntity } from '@/modules/users/entities/user.entity';
+
+import { UserRepository } from '@/modules/repositories/repositories/user.repository';
+
+
+const providers = [
+  UserRepository,
+];
+@Global()
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([
+      UserEntity,
+    ]),
+  ],
+  providers,
+  exports: providers,
+})
+export class RepositoriesModule {}
+```
+
+## App Module Structure
+```typescript
+// src/app.module.ts
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { AuthModule } from '@/modules/auth/auth.module';
+import { UsersModule } from '@/modules/users/users.module';
+import { RepositoriesModule } from '@/modules/repositories/repositories.module';
+import { QueueModule } from '@/modules/queue/queue.module';
+import { ConfigModule } from '@nestjs/config';
+import { configDatabase } from '@/shared/configs/database.config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { validate } from '@/shared/configs/env.config';
+
+@Module({
+  imports: [
+    // system modules
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+      validate,
+    }),
+    TypeOrmModule.forRootAsync({
+      useFactory: () => configDatabase,
+    }),
+
+    // feature modules
+    AuthModule, 
+    UsersModule, 
+    RepositoriesModule, 
+    QueueModule,
+
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+```
+
+## Module Naming Convention
+- **Module Class**: `{Entity}Module` (PascalCase)
+- **Module File**: `{module-name}.module.ts` (kebab-case)
+- **Module Directory**: `src/modules/{module-name}/` (kebab-case)
+
+## Module Organization Principles
+1. **Single Responsibility**: Each module should have a single, well-defined responsibility
+2. **Encapsulation**: Module internals should be hidden from other modules
+3. **Dependency Injection**: Use constructor injection for dependencies
+4. **Exports**: Only export what other modules need to use
+5. **Imports**: Import only what the module needs
+
+## Examples
+- Module: `users` → `UsersModule`, `users.module.ts`
+- Module: `products` → `ProductsModule`, `products.module.ts`
+
+## Module Dependencies
+When a module needs services from another module:
+
+```typescript
+// Module A needs services from Module B
+@Module({
+  imports: [ModuleB], // Import the module
+  controllers: [ModuleAController],
+  providers: [ModuleAService],
+  exports: [ModuleAService],
+})
+export class ModuleAModule {}
+
+// Module B exports its services
+@Module({
+  controllers: [ModuleBController],
+  providers: [ModuleBService],
+  exports: [ModuleBService], // Export for other modules to use
+})
+export class ModuleBModule {}
+# Module Structure
+
+## Standard Module Template
+```typescript
+// src/modules/{module-name}/{module-name}.module.ts
+import { Module } from '@nestjs/common';
+import { {Entity}Controller } from './controllers/{module-name}.controller';
+import { {Entity}Service } from './services/{module-name}.service';
+
+@Module({
+  controllers: [{Entity}Controller],
+  providers: [{Entity}Service],
+  exports: [{Entity}Service],
+})
+export class {Entity}Module {}
+```
+
+## Module Directory Structure
+```
+src/modules/{module-name}/
+├── {module-name}.module.ts
+├── controllers/
+│   └── {module-name}.controller.ts
+├── services/
+│   ├── {module-name}.service.ts
+│   ├── {module-name}-validation.service.ts
+│   └── {module-name}-creation.service.ts
+├── dto/
+│   ├── create-{entity}.dto.ts
+│   ├── update-{entity}.dto.ts
+│   ├── get-{entity}s.dto.ts
+│   ├── get-{entity}.dto.ts
+│   └── delete-{entity}.dto.ts
+├── entities/
+│   └── {entity}.entity.ts
+├── errors/
+│   └── {module-name}.errors.ts
+├── guards/
+├── decorators/
+├── strategies/
+├── types/
+│   └── index.ts
+└── utils/
+    ├── {module-name}-helpers.ts
+    └── {module-name}-validators.ts
+```
+
+## Module with Multiple Controllers
+```typescript
+// src/modules/{module-name}/{module-name}.module.ts
+import { Module } from '@nestjs/common';
+import { {Entity}Controller } from './controllers/{module-name}.controller';
+import { {Entity}ManagementController } from './controllers/{module-name}-management.controller';
+import { {Entity}Service } from './services/{module-name}.service';
+
+@Module({
+  controllers: [
+    {Entity}Controller,
+    {Entity}ManagementController,
+  ],
+  providers: [{Entity}Service],
+  exports: [{Entity}Service],
+})
+export class {Entity}Module {}
+```
+
+## Module with Dependencies
+```typescript
+// src/modules/{module-name}/{module-name}.module.ts
+import { Module } from '@nestjs/common';
+import { {Entity}Controller } from './controllers/{module-name}.controller';
+import { {Entity}Service } from './services/{module-name}.service';
+
+@Module({
+  imports: [],
+  controllers: [{Entity}Controller],
+  providers: [{Entity}Service],
+  exports: [{Entity}Service],
+})
+export class {Entity}Module {}
+```
+
+## Global Module (Repositories)
+```typescript
+// src/modules/repositories/repositories.module.ts
+import { Global, Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
+import { UserEntity } from '@/modules/users/entities/user.entity';
+
+import { UserRepository } from '@/modules/repositories/repositories/user.repository';
+
+
+const providers = [
+  UserRepository,
+];
+@Global()
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([
+      UserEntity,
+    ]),
+  ],
+  providers,
+  exports: providers,
+})
+export class RepositoriesModule {}
+```
+
+## App Module Structure
+```typescript
+// src/app.module.ts
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { AuthModule } from '@/modules/auth/auth.module';
+import { UsersModule } from '@/modules/users/users.module';
+import { RepositoriesModule } from '@/modules/repositories/repositories.module';
+import { QueueModule } from '@/modules/queue/queue.module';
+import { ConfigModule } from '@nestjs/config';
+import { configDatabase } from '@/shared/configs/database.config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { validate } from '@/shared/configs/env.config';
+
+@Module({
+  imports: [
+    // system modules
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+      validate,
+    }),
+    TypeOrmModule.forRootAsync({
+      useFactory: () => configDatabase,
+    }),
+
+    // feature modules
+    AuthModule, 
+    UsersModule, 
+    RepositoriesModule, 
+    QueueModule,
+
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}
+```
+
+## Module Naming Convention
+- **Module Class**: `{Entity}Module` (PascalCase)
+- **Module File**: `{module-name}.module.ts` (kebab-case)
+- **Module Directory**: `src/modules/{module-name}/` (kebab-case)
+
+## Module Organization Principles
+1. **Single Responsibility**: Each module should have a single, well-defined responsibility
+2. **Encapsulation**: Module internals should be hidden from other modules
+3. **Dependency Injection**: Use constructor injection for dependencies
+4. **Exports**: Only export what other modules need to use
+5. **Imports**: Import only what the module needs
+
+## Examples
+- Module: `users` → `UsersModule`, `users.module.ts`
+- Module: `products` → `ProductsModule`, `products.module.ts`
+
+## Module Dependencies
+When a module needs services from another module:
+
+```typescript
+// Module A needs services from Module B
+@Module({
+  imports: [ModuleB], // Import the module
+  controllers: [ModuleAController],
+  providers: [ModuleAService],
+  exports: [ModuleAService],
+})
+export class ModuleAModule {}
+
+// Module B exports its services
+@Module({
+  controllers: [ModuleBController],
+  providers: [ModuleBService],
+  exports: [ModuleBService], // Export for other modules to use
+})
+export class ModuleBModule {}

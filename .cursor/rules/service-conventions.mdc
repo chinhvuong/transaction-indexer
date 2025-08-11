@@ -1,0 +1,171 @@
+# Service Conventions
+
+## Key Principles
+- **Keep services short** for easy lookup and tracing
+- **Follow SOLID principles**
+- **Break down complex services** into smaller, focused services
+- **Extract pure functions** to utils folders
+- **Avoid `any` type** - use proper TypeScript types
+
+## Service Structure
+```typescript
+import { Injectable } from '@nestjs/common';
+import { AbstractService } from '@/shared/base/abstract.service';
+import { UserEntity } from '../entities/user.entity';
+import { UserRepository } from '@/modules/repositories/repositories/user.repository';
+import { UserErrors } from '../errors/user.errors';
+
+@Injectable()
+export class UserService extends AbstractService<UserEntity> {
+  constructor(
+    private readonly userRepository: UserRepository,
+  ) {
+    super(userRepository);
+  }
+
+  async createUser(createUserBodyDto: CreateUserBodyDto): Promise<UserEntity> {
+    await this.checkUserExists(createUserBodyDto.email);
+    const user = this.userRepository.create(createUserBodyDto);
+    return this.userRepository.save(user);
+  }
+
+  async getUsers(getUsersQueryDto: GetUsersQueryDto): Promise<{ UserEntity[]; total: number }> {
+    const { page = 1, limit = 20, name } = getUsersQueryDto;
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.userRepository.createQueryBuilder('user');
+    
+    if (name) {
+      queryBuilder.andWhere('user.name ILIKE :name', { name: `%${name}%` });
+    }
+
+    const [users, total] = await queryBuilder
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    return { users, total, page, limit };
+  }
+
+  async getUserById(id: number): Promise<UserEntity> {
+    const user = await this.userRepository.findById(id);
+    if (!user) {
+      throw UserErrors.notFoundById(id.toString());
+    }
+    return user;
+  }
+
+  // Private methods (internal logic)
+  private async checkUserExists(email: string): Promise<void> {
+    const existingUser = await this.userRepository.findByEmail(email);
+    if (existingUser) {
+      throw UserErrors.alreadyExists(email);
+    }
+  }
+}
+```
+
+## Service Breakdown Guidelines
+When a service becomes too large (>300 lines), break it down:
+
+```typescript
+// Main service - orchestration
+@Injectable()
+export class UserService {
+  constructor(
+    private readonly userValidationService: UserValidationService,
+    private readonly userCreationService: UserCreationService,
+  ) {}
+
+  async createUser(createUserBodyDto: CreateUserBodyDto): Promise<UserEntity> {
+    await this.userValidationService.validate(createUserBodyDto);
+    return this.userCreationService.create(createUserBodyDto);
+  }
+}
+
+// Specialized services
+@Injectable()
+export class UserValidationService {
+  async validate(createUserBodyDto: CreateUserBodyDto): Promise<void> {
+    // Validation logic
+  }
+}
+```
+
+## Error Handling
+Use the error factory pattern for consistent error handling:
+
+```typescript
+import { UserErrors } from '../errors/user.errors';
+
+export class UserService {
+  async getUserById(id: number): Promise<UserEntity> {
+    const user = await this.userRepository.findById(id);
+    if (!user) {
+      throw UserErrors.notFoundById(id.toString());
+    }
+    return user;
+  }
+}
+```
+
+## Utility Functions
+Extract pure functions to utils folders, if that util function can be use in other modules let put it in rc/shared/utils folder.
+
+```typescript
+// Module-specific utils
+// src/modules/users/utils/user-helpers.ts
+export function formatUserName(firstName: string, lastName: string): string {
+  return `${firstName} ${lastName}`.trim();
+}
+
+// Shared utils
+// src/shared/utils/string-helpers.ts
+export function generateRandomString(length: number): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+```
+
+## Type Safety
+Avoid using `any` type - use proper TypeScript types:
+
+```typescript
+// Good - proper typing
+async getUserById(id: number): Promise<UserEntity> {
+  const user = await this.userRepository.findById(id);
+  if (!user) {
+    throw UserErrors.notFoundById(id.toString());
+  }
+  return user;
+}
+
+// Bad - using any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async processData(data: any): Promise<any> {
+  return data;
+}
+```
+
+## Method Organization
+Organize methods in logical order:
+
+1. **Public methods** (business logic)
+2. **Private methods** (internal logic)
+
+```typescript
+@Injectable()
+export class UserService {
+  // 1. Public methods
+  async createUser() { }
+  async getUserById() { }
+
+  // 2. Private methods
+  private async checkUserExists() { }
+  private async createUserEntity() { }
+}
+```

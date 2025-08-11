@@ -1,0 +1,116 @@
+---
+alwaysApply: true
+---
+
+# Error Handling
+
+## Error Factory Pattern
+Use the centralized error factory pattern for consistent error handling across the application.
+
+```typescript
+// src/modules/users/errors/user.errors.ts
+import { createErrorFactory } from '@/shared/errors/app-errors';
+
+export const UserErrors = createErrorFactory({
+  notFoundById: {
+    code: 'USER_NOT_FOUND_BY_ID',
+    statusCode: 404,
+    message: (id: string) => `User with ID ${id} not found`,
+  },
+});
+```
+
+## Error Usage in Services
+```typescript
+// In service files
+import { UserErrors } from '../errors/user.errors';
+
+export class UserService {
+  async getUserById(id: number): Promise<UserEntity> {
+    const user = await this.userRepository.findById(id);
+    if (!user) {
+      throw UserErrors.notFoundById(id.toString());
+    }
+    return user;
+  }
+
+  async createUser(createUserBodyDto: CreateUserBodyDto): Promise<UserEntity> {
+    const existingUser = await this.userRepository.findByEmail(createUserBodyDto.email);
+    if (existingUser) {
+      throw UserErrors.alreadyExists(createUserBodyDto.email);
+    }
+
+    const user = this.userRepository.create(createUserBodyDto);
+    return this.userRepository.save(user);
+  }
+}
+```
+## Common Error Patterns
+
+### Not Found Errors
+```typescript
+notFoundById: {
+  code: '{ENTITY}_NOT_FOUND_BY_ID',
+  statusCode: 404,
+  message: (id: string) => `{Entity} with ID ${id} not found`,
+},
+```
+
+### Already Exists Errors
+```typescript
+alreadyExists: {
+  code: '{ENTITY}_ALREADY_EXISTS',
+  statusCode: 409,
+  message: (field: string) => `{Entity} with ${field} already exists`,
+},
+```
+
+### Validation Errors
+```typescript
+invalidData: {
+  code: '{ENTITY}_INVALID_DATA',
+  statusCode: 400,
+  message: (field: string) => `Invalid ${field} provided`,
+},
+```
+
+### Permission Errors
+```typescript
+insufficientPermissions: {
+  code: '{ENTITY}_INSUFFICIENT_PERMISSIONS',
+  statusCode: 403,
+  message: 'Insufficient permissions to perform this action',
+},
+```
+
+## Error Response Format
+All errors follow a consistent response format:
+
+```typescript
+{
+  statusCode: 404,
+  error: 'USER_NOT_FOUND_BY_ID',
+  message: 'User with ID 123 not found',
+  timestamp: '2024-01-01T00:00:00.000Z'
+}
+```
+
+## Error File Naming
+- **Error files**: `{module-name}.errors.ts`
+- **Error factory**: `{Entity}Errors`
+
+## Examples
+- Module: `users` → `user.errors.ts` → `UserErrors`
+- Module: `products` → `product.errors.ts` → `ProductErrors`
+
+## HTTP Status Codes
+Use appropriate HTTP status codes:
+
+- **200**: Success
+- **201**: Created
+- **400**: Bad Request (validation errors)
+- **401**: Unauthorized (authentication required)
+- **403**: Forbidden (insufficient permissions)
+- **404**: Not Found
+- **409**: Conflict (already exists)
+- **500**: Internal Server Error

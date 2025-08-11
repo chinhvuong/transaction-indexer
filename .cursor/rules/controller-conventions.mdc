@@ -1,0 +1,206 @@
+---
+globs: *.controller.ts
+alwaysApply: false
+---
+# Controller Conventions
+
+## Key Principles
+- **One DTO file per request** - exports both request and response DTOs
+- **Use DTO classes** instead of inline schema definitions
+- **Only include happy case** in `@ApiResponse({})`
+- **Keep controllers simple and short**
+- **Extend PaginationDto** for list requests
+- **Use proper guards and decorators** for authorization
+
+## Controller Structure
+```typescript
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/modules/auth/guards/roles.guard';
+import { Roles } from '@/modules/auth/decorators/roles.decorator';
+import { USER_ROLE } from '@/shared/constants';
+
+@Controller('users')
+@ApiTags('Users')
+export class UsersController {
+  constructor(
+    private readonly userService: UserService,
+  ) {}
+
+  @Post()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(USER_ROLE.ADMIN)
+  @ApiOperation({ summary: 'Create a new user' })
+  @ApiBody({ type: CreateUserBodyDto })
+  @ApiResponse({ status: 201, type: CreateUserResponseDto })
+  async createUser(@Body() createUserBodyDto: CreateUserBodyDto): Promise<CreateUserResponseDto> {
+    return await this.userService.createUser(createUserBodyDto);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Get all users' })
+  @ApiResponse({ status: 200, type: GetUsersResponseDto })
+  async getUsers(@Query() getUsersQueryDto: GetUsersQueryDto): Promise<GetUsersResponseDto> {
+    return await this.userService.getUsers(getUsersQueryDto);
+  }
+}
+```
+
+## Common Patterns
+
+### List Endpoints
+```typescript
+@Get()
+@ApiOperation({ summary: 'Get all {entity}s' })
+@ApiResponse({ status: 200, type: Get{Entity}sResponseDto })
+async get{Entity}s(@Query() get{Entity}sQueryDto: Get{Entity}sQueryDto): Promise<Get{Entity}sResponseDto> {
+  return await this.{entity}Service.get{Entity}s(get{Entity}sQueryDto);
+}
+```
+
+### Single Resource Endpoints
+```typescript
+@Get(':id')
+@ApiOperation({ summary: 'Get {entity} by ID' })
+@ApiResponse({ status: 200, type: Get{Entity}ResponseDto })
+async get{Entity}ById(@Param() get{Entity}ParamDto: Get{Entity}ParamDto): Promise<Get{Entity}ResponseDto> {
+  return await this.{entity}Service.get{Entity}ById(get{Entity}ParamDto);
+}
+```
+
+### Create Endpoints
+```typescript
+@Post()
+@Roles(USER_ROLE.ADMIN)
+@ApiOperation({ summary: 'Create a new {entity}' })
+@ApiResponse({ status: 201, type: Create{Entity}ResponseDto })
+async create{Entity}(@Body() create{Entity}BodyDto: Create{Entity}BodyDto): Promise<Create{Entity}ResponseDto> {
+  return = await this.{entity}Service.create{Entity}(create{Entity}BodyDto);
+}
+```
+
+## Authorization
+Use proper guards and decorators for authorization:
+
+```typescript
+// Public endpoint
+@Get()
+async getPublicData() { }
+
+// Protected endpoint (requires authentication)
+@Get('protected')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
+async getProtectedData() { }
+
+// Role-based endpoint
+@Post('admin-only')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(USER_ROLE.ADMIN)
+async adminOnlyAction() { }
+```
+# Controller Conventions
+
+## Key Principles
+- **One DTO file per request** - exports both request and response DTOs
+- **Use DTO classes** instead of inline schema definitions
+- **Only include happy case** in `@ApiResponse({})`
+- **Keep controllers simple and short**
+- **Extend PaginationDto** for list requests
+- **Use proper guards and decorators** for authorization
+
+## Controller Structure
+```typescript
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/modules/auth/guards/roles.guard';
+import { Roles } from '@/modules/auth/decorators/roles.decorator';
+import { USER_ROLE } from '@/shared/constants';
+
+@Controller('users')
+@ApiTags('Users')
+export class UsersController {
+  constructor(
+    private readonly userService: UserService,
+  ) {}
+
+  @Post()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(USER_ROLE.ADMIN)
+  @ApiOperation({ summary: 'Create a new user' })
+  @ApiResponse({ status: 201, type: CreateUserResponseDto })
+  async createUser(@Body() createUserBodyDto: CreateUserBodyDto): Promise<CreateUserResponseDto> {
+    return await this.userService.createUser(createUserBodyDto);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Get all users' })
+  @ApiResponse({ status: 200, type: GetUsersResponseDto })
+  async getUsers(@Query() getUsersQueryDto: GetUsersQueryDto): Promise<GetUsersResponseDto> {
+    return await this.userService.getUsers(getUsersQueryDto);
+  }
+}
+```
+
+## Common Patterns
+
+### List Endpoints
+```typescript
+@Get()
+@ApiOperation({ summary: 'Get all {entity}s' })
+@ApiResponse({ status: 200, type: Get{Entity}sResponseDto })
+async get{Entity}s(@Query() get{Entity}sQueryDto: Get{Entity}sQueryDto): Promise<Get{Entity}sResponseDto> {
+  return await this.{entity}Service.get{Entity}s(get{Entity}sQueryDto);
+ 
+}
+```
+
+### Single Resource Endpoints
+```typescript
+@Get(':id')
+@ApiOperation({ summary: 'Get {entity} by ID' })
+@ApiResponse({ status: 200, type: Get{Entity}ResponseDto })
+async get{Entity}ById(@Param() get{Entity}ParamDto: Get{Entity}ParamDto): Promise<Get{Entity}ResponseDto> {
+  return await this.{entity}Service.get{Entity}ById(get{Entity}ParamDto);
+}
+```
+
+### Create Endpoints
+```typescript
+@Post()
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(USER_ROLE.ADMIN)
+@ApiOperation({ summary: 'Create a new {entity}' })
+@ApiResponse({ status: 201, type: Create{Entity}ResponseDto })
+async create{Entity}(@Body() create{Entity}BodyDto: Create{Entity}BodyDto): Promise<Create{Entity}ResponseDto> {
+  return = await this.{entity}Service.create{Entity}(create{Entity}BodyDto);
+}
+```
+
+## Authorization
+Use proper guards and decorators for authorization:
+
+```typescript
+// Public endpoint
+@Get()
+async getPublicData() { }
+
+// Protected endpoint (requires authentication)
+@Get('protected')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
+async getProtectedData() { }
+
+// Role-based endpoint
+@Post('admin-only')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(USER_ROLE.ADMIN)
+async adminOnlyAction() { }
+```

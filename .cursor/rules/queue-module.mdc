@@ -1,0 +1,45 @@
+---
+description: Centralized queue processing and job data typing for the queue module
+alwaysApply: false
+---
+# Queue Module Rules
+
+## Centralized Queue Management
+
+- **All queue registration, processor, and producer logic must reside in the `queue` module.**
+  - Do NOT register or create Bull queues in other modules.
+  - All queue names, processor names, and default options are defined in `constants/queue.constants.ts`.
+
+## Job Producers and Data Types
+
+- Use the `QueueProducersService` to add jobs to queues from any module.
+  - Do NOT interact with Bull queues directly outside the queue module.
+  - Each producer method enforces the correct job data type for its queue (e.g., `addEmailJob`, `addNotificationJob`).
+  - **Never use `any` for job payloads.** Always use the correct TypeScript interface from `types/index.ts`.
+
+- When adding a new queue:
+  1. Add the queue name and processor to `constants/queue.constants.ts`.
+  2. Define the job data type in `types/index.ts`.
+  3. Add a producer method in `services/queue-producers.service.ts`.
+  4. Add a service method in `services/queue.service.ts` if needed.
+  5. Implement the processor in `processors/`.
+  6. Register the queue and processor in `queue.module.ts`.
+
+## Usage
+
+- To add a job from any module:
+  ```typescript
+  import { QueueProducersService } from '@/modules/queue/services/queue-producers.service';
+  import { EmailJobData } from '@/modules/queue/types';
+
+  // ...
+  await this.queueProducers.addEmailJob(emailJobData);
+  ```
+
+- **Do not register or use BullModule.registerQueue in other modules.** All queue registration is centralized.
+
+## Benefits
+
+- Prevents duplicate queue registration and circular dependencies.
+- Ensures all job data is strongly typed and consistent.
+- Makes it easy to discover, monitor, and manage all background jobs in one place.

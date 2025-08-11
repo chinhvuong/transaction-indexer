@@ -1,0 +1,146 @@
+# Entity Management & Migration Workflow
+
+## 🏗️ Entity Creation Workflow
+
+When adding a new entity to the application, follow this complete workflow:
+
+### 1. Build the Application First
+**ALWAYS build before generating migrations to ensure TypeORM can detect all entities:**
+```bash
+npm run build
+```
+
+### 2. Create Entity Structure
+```bash
+# Create entity file
+touch src/modules/{module-name}/entities/{entity-name}.entity.ts
+
+# Create repository
+touch src/modules/repositories/repositories/{entity-name}.repository.ts
+```
+
+### 3. Update Repository Module
+Add the new entity to `src/modules/repositories/repositories.module.ts`:
+```typescript
+// Add to TypeOrmModule.forFeature([])
+{EntityName}Entity,
+
+// Add to providers array
+{EntityName}Repository,
+
+// Add to exports array
+{EntityName}Repository,
+```
+
+### 4. Generate Migration
+```bash
+npm run db:generate --name=Create{EntityName}Table
+```
+
+### 5. Run Migration
+```bash
+npm run db:run
+```
+
+## 📋 Entity Template
+
+Use this template for new entities:
+
+```typescript
+// src/modules/{module-name}/entities/{entity-name}.entity.ts
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+
+@Entity('{table_name}')
+export class {EntityName}Entity {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ type: 'varchar', length: 255 })
+  name: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+}
+```
+
+## 🔄 Repository Template
+
+Use this template for new repositories:
+
+```typescript
+// src/modules/repositories/repositories/{entity-name}.repository.ts
+import { Injectable } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
+import { AbstractRepository } from '@/shared/base/abstract.repository';
+import { {EntityName}Entity } from '@/modules/{module-name}/entities/{entity-name}.entity';
+
+@Injectable()
+export class {EntityName}Repository extends AbstractRepository<{EntityName}Entity> {
+  constructor(@InjectDataSource() dataSource: DataSource) {
+    super({EntityName}Entity, dataSource);
+  }
+}
+```
+
+## 🚨 Critical Rules
+
+### Build Before Migration
+- **ALWAYS** run `npm run build` before generating migrations
+- This ensures TypeORM can detect all entities and their relationships
+- Without building, migrations may be incomplete or missing
+
+### Migration Naming
+- Use descriptive names: `CreateUsersTable`, `AddEmailToUsersTable`
+- Follow PascalCase convention
+- Be specific about what the migration does
+
+### Entity Registration
+- Every entity MUST be registered in `repositories.module.ts`
+- Include in `TypeOrmModule.forFeature([])`
+- Add corresponding repository to providers and exports
+
+## 📝 Migration Commands Reference
+
+```bash
+# Build application (REQUIRED before migration generation)
+npm run build
+
+# Generate migration
+npm run db:generate --name=MigrationName
+
+# Run migrations
+npm run db:run
+
+# Revert last migration
+npm run db:revert
+
+# Show migration status
+npm run db:show
+
+# Reset database (revert + run)
+npm run db:reset
+```
+
+## 🔍 Troubleshooting
+
+### Migration Generation Issues
+1. **Build first**: `npm run build`
+2. **Check entity registration**: Ensure entity is in `repositories.module.ts`
+3. **Check imports**: Verify all entity imports are correct
+4. **Check TypeORM config**: Ensure database config is correct
+
+### Common Errors
+- **"No changes in database schema"**: Build the application first
+- **"Entity not found"**: Check entity registration in repositories module
+- **"Migration already exists"**: Use a different migration name
+
+## 📚 Related Files
+
+- [package.json](mdc:package.json) - Migration scripts
+- [src/modules/repositories/repositories.module.ts](mdc:src/modules/repositories/repositories.module.ts) - Entity registration
+- [src/shared/configs/database.config.ts](mdc:src/shared/configs/database.config.ts) - TypeORM configuration
+- [src/shared/base/abstract.repository.ts](mdc:src/shared/base/abstract.repository.ts) - Base repository class

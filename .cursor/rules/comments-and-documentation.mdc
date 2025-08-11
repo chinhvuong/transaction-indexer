@@ -1,0 +1,190 @@
+# Comments and Documentation
+
+## Comment Guidelines
+- **Only comment when necessary** - explain why, not how, i'm a developer so no need you comment line by line. comment for complex logic only, don't need to comment if developer can read and know what the code do.
+- **Use meaningful variable names** instead of comments
+- **Comment complex business logic** that isn't self-explanatory
+- **Avoid obvious comments** that just repeat the code
+
+## Good Comments
+```typescript
+// Good - explains why (only for complex logics)
+// Skip validation for admin users to allow bulk operations
+if (user.role === USER_ROLE.ADMIN) {
+  return true;
+}
+
+// Good - explains complex business logic
+// Calculate discount based on user tier and purchase history
+// Premium users get 15% off, regular users get 5% off
+const discountPercentage = user.tier === 'PREMIUM' ? 15 : 5;
+const finalDiscount = Math.min(discountPercentage, maxDiscountAllowed);
+
+// Good - explains non-obvious behavior
+// Use UTC time to avoid timezone issues in distributed systems
+const createdAt = new Date().toISOString();
+```
+
+## Bad Comments
+```typescript
+// Bad - just repeats what the code does
+// Check if user is admin
+if (user.role === USER_ROLE.ADMIN) {
+  return true;
+}
+
+// Bad - obvious comment
+// Set the name
+user.name = name;
+```
+
+## API Documentation
+Use Swagger decorators for comprehensive API documentation:
+
+```typescript
+@Post()
+@ApiOperation({ 
+  summary: 'Create a new user',
+  description: 'Creates a new user account with the provided information'
+})
+@ApiBody({ 
+  type: CreateUserBodyDto,
+  description: 'User creation data'
+})
+@ApiResponse({ 
+  status: 201, 
+  type: CreateUserResponseDto,
+  description: 'User created successfully'
+})
+@ApiResponse({ 
+  status: 400, 
+  description: 'Invalid input data'
+})
+async createUser(@Body() createUserBodyDto: CreateUserBodyDto): Promise<CreateUserResponseDto> {
+  const user = await this.userService.createUser(createUserBodyDto);
+  return this.mapToResponseDto(user);
+}
+```
+
+## DTO Documentation
+Provide clear examples and descriptions in DTOs:
+
+```typescript
+export class CreateUserBodyDto {
+  @ApiProperty({ 
+    example: 'john@example.com',
+    description: 'User email address (must be unique)',
+    format: 'email'
+  })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ 
+    example: 'John Doe',
+    description: 'User full name',
+    minLength: 2,
+    maxLength: 255
+  })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(255)
+  name: string;
+}
+```
+
+## Function Documentation
+Document complex functions with JSDoc:
+
+```typescript
+/**
+ * Calculates the total price including tax and discounts
+ * @param basePrice - The base price of the item
+ * @param taxRate - The tax rate as a decimal (e.g., 0.08 for 8%)
+ * @param discountPercentage - The discount percentage (0-100)
+ * @returns The final price after tax and discount
+ */
+function calculateFinalPrice(
+  basePrice: number, 
+  taxRate: number, 
+  discountPercentage: number
+): number {
+  const discountAmount = (basePrice * discountPercentage) / 100;
+  const priceAfterDiscount = basePrice - discountAmount;
+  const taxAmount = priceAfterDiscount * taxRate;
+  return priceAfterDiscount + taxAmount;
+}
+```
+
+## Class Documentation
+Document classes with their purpose and usage:
+
+```typescript
+/**
+ * Service for managing user operations including CRUD operations,
+ * authentication, and user-specific business logic.
+ */
+@Injectable()
+export class UserService extends AbstractService<UserEntity> {
+  constructor(
+    private readonly userRepository: UserRepository,
+  ) {
+    super(userRepository);
+  }
+
+  /**
+   * Creates a new user with validation and duplicate checking
+   * @param createUserBodyDto - User creation data
+   * @returns The created user entity
+   * @throws {UserErrors.alreadyExists} When user with email already exists
+   */
+  async createUser(createUserBodyDto: CreateUserBodyDto): Promise<UserEntity> {
+    // Implementation
+  }
+}
+```
+
+## TODO Comments
+Use TODO comments for future improvements:
+
+```typescript
+// TODO: Implement rate limiting for user creation
+// TODO: Add email verification flow
+async createUser(createUserBodyDto: CreateUserBodyDto): Promise<UserEntity> {
+  // Implementation
+}
+```
+
+## FIXME Comments
+Use FIXME comments for known issues:
+
+```typescript
+// FIXME: This is a temporary workaround for the timezone issue
+// Should be replaced with proper timezone handling
+const createdAt = new Date().toISOString();
+```
+
+## Self-Documenting Code
+Prefer self-documenting code over comments:
+
+```typescript
+// Good - self-documenting
+const isUserAdmin = user.role === USER_ROLE.ADMIN;
+const hasValidEmail = emailRegex.test(user.email);
+const isAccountActive = user.status === ACCOUNT_STATUS.ACTIVE;
+
+// Good - descriptive variable names
+const userCreationDate = new Date();
+const emailVerificationToken = generateSecureToken();
+const passwordHash = await bcrypt.hash(password, saltRounds);
+
+// Good - clear function names
+async validateUserCredentials(email: string, password: string): Promise<boolean> {
+  // Implementation
+}
+
+async sendWelcomeEmailToNewUser(user: UserEntity): Promise<void> {
+  // Implementation
+}
+```
+alwaysApply: true
+---

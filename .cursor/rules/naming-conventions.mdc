@@ -1,0 +1,138 @@
+---
+alwaysApply: true
+---
+
+# Naming Conventions
+
+## File & Directory Naming
+- **kebab-case** for file and directory names
+- **PascalCase** for class names
+- **camelCase** for variables, functions, and methods
+
+## Variables & Functions
+```typescript
+// Variables - camelCase
+const userEmail = 'user@example.com';
+const userList: UserEntity[] = [];
+
+// Functions - camelCase
+function getUserById(id: string): Promise<UserEntity | null> { }
+const createUser = (data: CreateUserBodyDto): Promise<UserEntity> => { }
+
+// Constants - UPPER_SNAKE_CASE
+const MAX_RETRY_ATTEMPTS = 3;
+const DEFAULT_PAGE_SIZE = 10;
+
+// Avoid any type - use eslint-disable-next-line if required
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const legacyFunction = (data: any): any => { }
+```
+
+## Classes & Interfaces
+```typescript
+// Classes - PascalCase
+export class UserService { }
+export class CreateUserBodyDto { }
+
+// Interfaces - PascalCase with 'I' prefix
+export interface IUserRepository { }
+
+// Types - PascalCase
+export type UserRole = 'admin' | 'user' | 'moderator';
+```
+
+## Enum Naming Convention
+```typescript
+// Enums - UPPER_SNAKE_CASE
+export enum USER_ROLE {
+  ADMIN = 'ADMIN',
+  USER = 'USER',
+  MODERATOR = 'MODERATOR'
+}
+```
+
+## Entity Naming
+- **Entity Class**: `{Entity}Entity` (PascalCase)
+- **Table Name**: `{table_name}` (snake_case)
+- **Repository**: `{Entity}Repository`
+- **Service**: `{Entity}Service`
+- **Controller**: `{Entity}Controller`
+- **Module**: `{Entity}Module`
+
+## File Naming
+- **Files**: `{entity}.entity.ts` (kebab-case)
+- **DTOs**: `{action}-{entity}.dto.ts` (e.g., `create-product.dto.ts`)
+- **Services**: `{service-name}.service.ts` (kebab-case)
+- **Controllers**: `{controller-name}.controller.ts` (kebab-case)
+
+## Method Naming
+- **Controller Methods**: `{action}{Entity}` (camelCase)
+- **Service Methods**: `{action}{Entity}` (camelCase)
+- **DTO Classes**: `{Action}{Entity}BodyDto`, `{Action}{Entity}ResponseDto`
+# Naming Conventions
+
+## File & Directory Naming
+- **kebab-case** for file and directory names
+- **PascalCase** for class names
+- **camelCase** for variables, functions, and methods
+
+## Variables & Functions
+```typescript
+// Variables - camelCase
+const userEmail = 'user@example.com';
+const userList: UserEntity[] = [];
+
+// Functions - camelCase
+function getUserById(id: string): Promise<UserEntity | null> { }
+const createUser = (data: CreateUserBodyDto): Promise<UserEntity> => { }
+
+// Constants - UPPER_SNAKE_CASE
+const MAX_RETRY_ATTEMPTS = 3;
+const DEFAULT_PAGE_SIZE = 10;
+
+// Avoid any type - use eslint-disable-next-line if required
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const legacyFunction = (data: any): any => { }
+```
+
+## Classes & Interfaces
+```typescript
+// Classes - PascalCase
+export class UserService { }
+export class CreateUserBodyDto { }
+
+// Interfaces - PascalCase with 'I' prefix
+export interface IUserRepository { }
+
+// Types - PascalCase
+export type UserRole = 'admin' | 'user' | 'moderator';
+```
+
+## Enum Naming Convention
+```typescript
+// Enums - UPPER_SNAKE_CASE
+export enum USER_ROLE {
+  ADMIN = 'ADMIN',
+  USER = 'USER',
+  MODERATOR = 'MODERATOR'
+}
+```
+
+## Entity Naming
+- **Entity Class**: `{Entity}Entity` (PascalCase)
+- **Table Name**: `{table_name}` (snake_case)
+- **Repository**: `{Entity}Repository`
+- **Service**: `{Entity}Service`
+- **Controller**: `{Entity}Controller`
+- **Module**: `{Entity}Module`
+
+## File Naming
+- **Files**: `{entity}.entity.ts` (kebab-case)
+- **DTOs**: `{action}-{entity}.dto.ts` (e.g., `create-product.dto.ts`)
+- **Services**: `{service-name}.service.ts` (kebab-case)
+- **Controllers**: `{controller-name}.controller.ts` (kebab-case)
+
+## Method Naming
+- **Controller Methods**: `{action}{Entity}` (camelCase)
+- **Service Methods**: `{action}{Entity}` (camelCase)
+- **DTO Classes**: `{Action}{Entity}BodyDto`, `{Action}{Entity}ResponseDto`

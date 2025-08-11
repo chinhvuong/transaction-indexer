@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "📝 Validating commit message..."
+
+# Check if commit message follows conventional commit format
+npx --no -- commitlint --edit $1
+
+echo "✅ Commit message is valid!" 
