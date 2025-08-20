@@ -566,7 +566,6 @@ docker-compose -f docker-compose.dev.yml up api
 ### Environment Variables
 Make sure your `.env` file has all required variables:
 ```env
-# Application
 NODE_ENV=development
 PORT=3000
 
@@ -574,8 +573,8 @@ PORT=3000
 DB_HOST=localhost # overriden in compose file
 DB_PORT=54323
 DB_USERNAME=postgres # overriden in compose file
-DB_PASSWORD=password # overriden in compose file
-DB_NAME=tx-crawler
+DB_PASSWORD=password 
+DB_NAME=tx-indexer
 
 # JWT
 ACCESS_TOKEN_SECRET=your-super-secret-jwt-key-change-in-production
@@ -590,7 +589,17 @@ REDIS_PORT=63791
 REDIS_COMMANDER_PORT=8082
 
 SUPER_ADMIN_ADDRESSES=
+
 CRAWLER_NETWORK=sepolia
+
+ETHEREUM_RPC_URLS=
+BSC_TESTNET_RPC_URLS=
+POLYGON_RPC_URLS=
+BSC_RPC_URLS=
+SEPOLIA_RPC_URLS=
+BSC_TESTNET_RPC_URLS=
+SOLANA_RPC_URL=
+
 ```
 
 ## 📚 Next Steps
