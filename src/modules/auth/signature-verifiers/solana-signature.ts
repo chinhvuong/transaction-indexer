@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import * as anchor from '@coral-xyz/anchor';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
-import nacl from 'tweetnacl';
+import * as nacl from 'tweetnacl';
 import { decodeUTF8 } from 'tweetnacl-util';
 import { ISignatureVerifier } from './signature-verifier.interface';
 
